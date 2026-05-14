@@ -113,15 +113,34 @@ export function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawingRef = useRef(false);
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
+  const preSubmitImageRef = useRef<ImageData | null>(null);
+  const skipNextPaintRef = useRef(false);
   const [phase, setPhase] = useState<Phase>("briefing");
   const [breakdown, setBreakdown] = useState<ScoreBreakdown | null>(null);
   const [detected, setDetected] = useState<DetectedCircle | null>(null);
   const [brushSize, setBrushSize] = useState<BrushSize>("medium");
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const reduced = useReducedMotion();
 
   const reset = useCallback(() => {
     const canvas = canvasRef.current;
     if (canvas !== null) paintRed(canvas);
+    preSubmitImageRef.current = null;
+    skipNextPaintRef.current = false;
+    setBreakdown(null);
+    setDetected(null);
+    setPhase("playing");
+  }, []);
+
+  const handleBack = useCallback(() => {
+    const canvas = canvasRef.current;
+    const saved = preSubmitImageRef.current;
+    if (canvas !== null && saved !== null) {
+      const ctx = canvas.getContext("2d");
+      if (ctx !== null) ctx.putImageData(saved, 0, 0);
+    }
+    preSubmitImageRef.current = null;
+    skipNextPaintRef.current = true;
     setBreakdown(null);
     setDetected(null);
     setPhase("playing");
@@ -129,6 +148,10 @@ export function App() {
 
   useEffect(() => {
     if (phase !== "playing") return;
+    if (skipNextPaintRef.current) {
+      skipNextPaintRef.current = false;
+      return;
+    }
     const canvas = canvasRef.current;
     if (canvas === null) return;
     paintRed(canvas);
@@ -180,6 +203,7 @@ export function App() {
     const ctx = canvas.getContext("2d");
     if (ctx === null) return;
     const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    preSubmitImageRef.current = img;
     const result = evaluate(img);
     const detectedNow = detectCircle(img);
     if (detectedNow !== null) drawDetectedCircle(canvas, detectedNow);
@@ -192,6 +216,7 @@ export function App() {
 
   const handleAction = useCallback(
     (action: Action) => {
+      if (showResetConfirm) return;
       switch (action) {
         case "brush_small":
           setBrushSize("small");
@@ -206,17 +231,46 @@ export function App() {
           handleSubmit();
           break;
         case "reset":
-          reset();
+          setShowResetConfirm(true);
           break;
         case "retry":
           reset();
+          break;
+        case "back":
+          handleBack();
           break;
         default:
           break;
       }
     },
-    [handleSubmit, reset],
+    [handleSubmit, reset, handleBack, showResetConfirm],
   );
+
+  const confirmReset = useCallback(() => {
+    setShowResetConfirm(false);
+    reset();
+  }, [reset]);
+
+  const cancelReset = useCallback(() => {
+    setShowResetConfirm(false);
+  }, []);
+
+  useEffect(() => {
+    if (!showResetConfirm) return;
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        confirmReset();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        cancelReset();
+      }
+    };
+    window.addEventListener("keydown", onKey, { capture: true });
+    return () => window.removeEventListener("keydown", onKey, { capture: true });
+  }, [showResetConfirm, confirmReset, cancelReset]);
 
   useKeyBindings(phase, handleAction);
 
@@ -243,7 +297,7 @@ export function App() {
           brushSize={brushSize}
           onSelectBrush={setBrushSize}
           onSubmit={handleSubmit}
-          onReset={reset}
+          onReset={() => setShowResetConfirm(true)}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerEnd={handlePointerEnd}
@@ -263,6 +317,17 @@ export function App() {
             detected={detected}
             verdict={verdict}
             onRetry={reset}
+            onBack={handleBack}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showResetConfirm && (
+          <ResetConfirmModal
+            key="reset-confirm"
+            onConfirm={confirmReset}
+            onCancel={cancelReset}
           />
         )}
       </AnimatePresence>
@@ -336,7 +401,7 @@ function GameScreen({
           className="absolute -inset-px"
           style={{
             background:
-              "linear-gradient(140deg, vargold 0%, #5a4623 50%, vargold 100%)",
+              "linear-gradient(140deg, var(--color-gold) 0%, #5a4623 50%, var(--color-gold) 100%)",
           }}
           aria-hidden
         />
@@ -387,6 +452,9 @@ function GameScreen({
       />
 
       <div className="flex flex-wrap items-center justify-center gap-4 px-1">
+        <ActionButton onClick={onReset} tone="ghost" keyLabel="R">
+          やりなおす
+        </ActionButton>
         <ActionButton
           onClick={onSubmit}
           disabled={disabled}
@@ -394,9 +462,6 @@ function GameScreen({
           keyLabel="Enter"
         >
           提出
-        </ActionButton>
-        <ActionButton onClick={onReset} tone="ghost" keyLabel="R">
-          やりなおす
         </ActionButton>
       </div>
 
@@ -443,7 +508,7 @@ function BrushPanel({ selected, onSelect, disabled }: BrushPanelProps) {
                 className="absolute inset-0 pointer-events-none"
                 style={{
                   boxShadow:
-                    "0 0 0 1px vargold, 0 0 18px 2px rgba(240,210,124,0.45)",
+                    "0 0 0 1px var(--color-gold), 0 0 18px 2px rgba(240,210,124,0.45)",
                 }}
                 transition={{
                   type: "spring",
@@ -590,11 +655,93 @@ function JudgingOverlay() {
   );
 }
 
+type ResetConfirmModalProps = {
+  readonly onConfirm: () => void;
+  readonly onCancel: () => void;
+};
+
+function ResetConfirmModal({ onConfirm, onCancel }: ResetConfirmModalProps) {
+  const reduced = useReducedMotion();
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <motion.div
+        className="fixed inset-0 bg-ink/80 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18 }}
+        onClick={onCancel}
+        aria-hidden
+      />
+      <motion.div
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="reset-confirm-title"
+        className="relative w-full max-w-md"
+        initial={reduced ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={reduced ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.97 }}
+        transition={{ type: "spring", stiffness: 260, damping: 22 }}
+      >
+        <DialogBox>
+          <div
+            className="text-[0.65rem] tracking-[0.4em] text-hinomaru mb-2"
+            style={{ fontFamily: "var(--font-mono)" }}
+          >
+            ── CONFIRM / 確認 ──
+          </div>
+          <h2
+            id="reset-confirm-title"
+            className="text-2xl sm:text-3xl text-ink"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            やりなおしますか？
+          </h2>
+          <p
+            className="mt-3 text-sm leading-relaxed text-ink/80"
+            style={{ fontFamily: "var(--font-body)", fontWeight: 500 }}
+          >
+            今のキャンバスの状態は失われます。
+            <br />
+            この操作は取り消せません。
+          </p>
+          <div className="mt-6 flex items-center justify-end gap-3">
+            <motion.button
+              type="button"
+              onClick={onCancel}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-transparent text-ink/80 tracking-widest border border-ink/30 hover:text-ink hover:border-ink/70 transition text-sm whitespace-nowrap shrink-0"
+              style={{ fontFamily: "var(--font-body)", fontWeight: 700 }}
+              whileHover={{ scale: reduced ? 1 : 1.04 }}
+              whileTap={{ scale: reduced ? 1 : 0.97 }}
+            >
+              <span>キャンセル</span>
+              <KeyCap label="Esc" size="sm" tone="light" />
+            </motion.button>
+            <motion.button
+              type="button"
+              onClick={onConfirm}
+              autoFocus
+              className="inline-flex items-center gap-2 px-5 py-2 bg-hinomaru text-paper tracking-widest border-2 border-hinomaru hover:bg-hinomaru-bright transition text-sm whitespace-nowrap shrink-0"
+              style={{ fontFamily: "var(--font-body)", fontWeight: 700 }}
+              whileHover={{ scale: reduced ? 1 : 1.04 }}
+              whileTap={{ scale: reduced ? 1 : 0.97 }}
+            >
+              <span>やりなおす</span>
+              <KeyCap label="Enter" size="sm" tone="dark" />
+            </motion.button>
+          </div>
+        </DialogBox>
+      </motion.div>
+    </div>
+  );
+}
+
 type ResultPanelProps = {
   readonly breakdown: ScoreBreakdown;
   readonly detected: DetectedCircle | null;
   readonly verdict: "fail" | "success" | "perfect";
   readonly onRetry: () => void;
+  readonly onBack: () => void;
 };
 
 const fmtPercent = (ratio: number): string => `${(ratio * 100).toFixed(1)}%`;
@@ -632,11 +779,11 @@ const verdictMessage = (v: "fail" | "success" | "perfect"): string => {
 const verdictColor = (v: "fail" | "success" | "perfect"): string => {
   switch (v) {
     case "perfect":
-      return "vargold-bright";
+      return "var(--color-gold-bright)";
     case "success":
-      return "varpaper";
+      return "var(--color-paper)";
     case "fail":
-      return "varhinomaru-bright";
+      return "var(--color-hinomaru-bright)";
   }
 };
 
@@ -645,6 +792,7 @@ function ResultPanel({
   detected,
   verdict,
   onRetry,
+  onBack,
 }: ResultPanelProps) {
   const reduced = useReducedMotion();
   const shake =
@@ -696,7 +844,7 @@ function ResultPanel({
             className="my-5 h-px"
             style={{
               background:
-                "linear-gradient(90deg, transparent, varink/40, transparent)",
+                "linear-gradient(90deg, transparent, var(--color-ink)/40, transparent)",
             }}
             initial={reduced ? false : { scaleX: 0 }}
             animate={{ scaleX: 1 }}
@@ -787,11 +935,29 @@ function ResultPanel({
           )}
 
           <motion.div
-            className="mt-5 flex justify-center"
+            className="mt-5 flex justify-center gap-3"
             initial={reduced ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: reduced ? 0 : 1.55, duration: 0.3 }}
           >
+            <motion.button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-transparent text-ink tracking-widest border-2 border-ink/30 hover:border-ink/70 transition"
+              style={{ fontFamily: "var(--font-body)", fontWeight: 700 }}
+              whileHover={{ scale: reduced ? 1 : 1.04 }}
+              whileTap={{ scale: reduced ? 1 : 0.97 }}
+            >
+              <motion.span
+                aria-hidden
+                animate={reduced ? undefined : { x: [0, -4, 0] }}
+                transition={{ duration: 1.2, repeat: Infinity }}
+              >
+                ◀
+              </motion.span>
+              <span>戻る</span>
+              <KeyCap label="B" size="sm" tone="light" />
+            </motion.button>
             <motion.button
               type="button"
               onClick={onRetry}
@@ -825,7 +991,7 @@ function VerdictStamp({
   const reduced = useReducedMotion();
   const label = verdictHeadline(verdict);
   const border =
-    verdict === "perfect" ? "vargold-bright" : verdictColor(verdict);
+    verdict === "perfect" ? "var(--color-gold-bright)" : verdictColor(verdict);
   return (
     <div className="relative h-24 flex items-center justify-center">
       <div
@@ -977,7 +1143,7 @@ function Confetti() {
         const left = (i * 97) % 100;
         const delay = (i % 10) * 0.12;
         const dur = 2.6 + ((i * 31) % 100) / 70;
-        const colors = ["vargold-bright", "varhinomaru-bright", "varpaper"];
+        const colors = ["var(--color-gold-bright)", "var(--color-hinomaru-bright)", "var(--color-paper)"];
         const color = colors[i % colors.length];
         const size = 6 + (i % 4) * 3;
         return (

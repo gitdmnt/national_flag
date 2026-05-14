@@ -19,10 +19,11 @@ describe("hintsForPhase", () => {
     expect(actions).toContain("reset");
   });
 
-  test("result returns retry", () => {
+  test("result returns retry and back", () => {
     const hints = hintsForPhase("result");
     const actions = hints.map((h) => h.action);
     expect(actions).toContain("retry");
+    expect(actions).toContain("back");
   });
 
   test("judging returns empty", () => {
@@ -64,6 +65,11 @@ describe("keyToAction", () => {
 
   test("Enter retries in result", () => {
     expect(keyToAction("Enter", "result")).toBe("retry");
+  });
+
+  test("b and B return back in result", () => {
+    expect(keyToAction("b", "result")).toBe("back");
+    expect(keyToAction("B", "result")).toBe("back");
   });
 
   test("judging ignores all input", () => {

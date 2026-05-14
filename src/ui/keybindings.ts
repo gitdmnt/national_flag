@@ -8,7 +8,8 @@ export type Action =
   | "brush_large"
   | "submit"
   | "reset"
-  | "retry";
+  | "retry"
+  | "back";
 
 export type KeyHint = {
   readonly keyLabel: string;
@@ -30,6 +31,7 @@ const PLAYING_HINTS: readonly KeyHint[] = [
 ];
 
 const RESULT_HINTS: readonly KeyHint[] = [
+  { keyLabel: "B", label: "戻る", action: "back" },
   { keyLabel: "Enter", label: "もう一度", action: "retry" },
 ];
 
@@ -68,6 +70,7 @@ export const keyToAction = (key: string, phase: Phase): Action | null => {
 
   if (phase === "result") {
     if (key === "Enter") return "retry";
+    if (k === "b") return "back";
     return null;
   }
 
