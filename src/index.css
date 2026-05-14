@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    @apply text-[rgba(255,255,255,0.87)] bg-[#242424] font-sans;
+  }
+
+  body {
+    @apply grid place-items-center min-w-[320px] min-h-screen relative m-0;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes flag-flash-kf {
+  0%,
+  100% {
+    background-color: rgba(188, 0, 45, 0);
+  }
+  50% {
+    background-color: rgba(188, 0, 45, 0.55);
+  }
+}
+
+.flag-flash {
+  animation: flag-flash-kf 0.4s ease-in-out infinite;
+}
+
+
+@media (prefers-reduced-motion) {
+  *,
+  ::before,
+  ::after {
+    animation: none !important;
+  }
+}
