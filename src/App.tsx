@@ -779,9 +779,9 @@ const verdictMessage = (v: "fail" | "success" | "perfect"): string => {
 const verdictColor = (v: "fail" | "success" | "perfect"): string => {
   switch (v) {
     case "perfect":
-      return "var(--color-gold-bright)";
+      return "var(--color-gold)";
     case "success":
-      return "var(--color-paper)";
+      return "var(--color-ink)";
     case "fail":
       return "var(--color-hinomaru-bright)";
   }
@@ -844,7 +844,7 @@ function ResultPanel({
             className="my-5 h-px"
             style={{
               background:
-                "linear-gradient(90deg, transparent, var(--color-ink)/40, transparent)",
+                "linear-gradient(90deg, transparent, rgba(10, 10, 10, 0.4), transparent)",
             }}
             initial={reduced ? false : { scaleX: 0 }}
             animate={{ scaleX: 1 }}
@@ -990,12 +990,11 @@ function VerdictStamp({
 }) {
   const reduced = useReducedMotion();
   const label = verdictHeadline(verdict);
-  const border =
-    verdict === "perfect" ? "var(--color-gold-bright)" : verdictColor(verdict);
+  const border = verdictColor(verdict);
   return (
     <div className="relative h-24 flex items-center justify-center">
       <div
-        className="absolute text-[0.6rem] tracking-[0.4em] text-ink/40 -top-1"
+        className="absolute text-[0.6rem] tracking-[0.4em] text-ink/60 -top-1"
         style={{ fontFamily: "var(--font-mono)" }}
       >
         ── VERDICT ──

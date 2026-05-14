@@ -175,6 +175,9 @@ export function DialogBox({ children }: { readonly children: React.ReactNode }) 
     <div
       className="relative bg-paper text-ink p-6 sm:p-7 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)]"
       style={{
+        backgroundColor: "var(--color-paper)",
+        color: "var(--color-ink)",
+        colorScheme: "light",
         backgroundImage:
           "linear-gradient(135deg, rgba(0,0,0,0.025) 0%, transparent 40%, rgba(0,0,0,0.04) 100%)",
       }}

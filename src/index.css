@@ -18,11 +18,13 @@
 
 @layer base {
   :root {
+    color-scheme: dark only;
     color: var(--color-paper);
     background-color: var(--color-ink);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    forced-color-adjust: none;
   }
 
   body {
