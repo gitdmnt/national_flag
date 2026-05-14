@@ -1,21 +1,75 @@
 @import "tailwindcss";
 
+@theme {
+  --color-ink: #0a0a0a;
+  --color-ink-2: #161616;
+  --color-paper: #f5efe1;
+  --color-paper-2: #e8dfc9;
+  --color-hinomaru: #bc002d;
+  --color-hinomaru-bright: #ef1c21;
+  --color-gold: #c9a961;
+  --color-gold-bright: #f0d27c;
+  --color-silver: #8a8a8a;
+
+  --font-display: "Reggae One", "Zen Kaku Gothic New", system-ui, sans-serif;
+  --font-body: "Zen Kaku Gothic New", system-ui, sans-serif;
+  --font-mono: "DotGothic16", "Zen Kaku Gothic New", monospace;
+}
+
 @layer base {
   :root {
-    @apply text-[rgba(255,255,255,0.87)] bg-[#242424] font-sans;
+    color: var(--color-paper);
+    background-color: var(--color-ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   body {
-    @apply grid place-items-center min-w-[320px] min-h-screen relative m-0;
+    @apply min-w-[320px] min-h-screen relative m-0 overflow-x-hidden;
+    background-color: var(--color-ink);
+    background-image:
+      radial-gradient(
+        circle at 50% 38%,
+        rgba(188, 0, 45, 0.18) 0%,
+        rgba(188, 0, 45, 0.05) 28%,
+        transparent 55%
+      ),
+      repeating-conic-gradient(
+        from 0deg at 50% 38%,
+        rgba(201, 169, 97, 0.025) 0deg,
+        transparent 4deg,
+        transparent 14deg,
+        rgba(201, 169, 97, 0.025) 18deg
+      ),
+      linear-gradient(180deg, #0a0a0a 0%, #050505 100%);
+    background-attachment: fixed;
   }
-}
 
-@keyframes spin {
-  from {
-    transform: rotate(0);
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.93 0 0 0 0 0.88 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.5;
+    mix-blend-mode: overlay;
   }
-  to {
-    transform: rotate(360deg);
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.55) 0%,
+      transparent 18%,
+      transparent 82%,
+      rgba(0, 0, 0, 0.7) 100%
+    );
   }
 }
 
@@ -33,11 +87,112 @@
   animation: flag-flash-kf 0.4s ease-in-out infinite;
 }
 
+@keyframes gold-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(240, 210, 124, 0),
+      0 0 0 0 rgba(240, 210, 124, 0);
+  }
+  50% {
+    box-shadow:
+      0 0 24px 4px rgba(240, 210, 124, 0.45),
+      inset 0 0 12px 0 rgba(240, 210, 124, 0.25);
+  }
+}
+
+.gold-pulse {
+  animation: gold-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes scanlines {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 4px;
+  }
+}
+
+.scanlines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.18) 0px,
+    rgba(0, 0, 0, 0.18) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: multiply;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-20vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(120vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.bracket-tl,
+.bracket-tr,
+.bracket-bl,
+.bracket-br {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-gold);
+  pointer-events: none;
+}
+.bracket-tl {
+  top: -2px;
+  left: -2px;
+  border-right: none;
+  border-bottom: none;
+}
+.bracket-tr {
+  top: -2px;
+  right: -2px;
+  border-left: none;
+  border-bottom: none;
+}
+.bracket-bl {
+  bottom: -2px;
+  left: -2px;
+  border-right: none;
+  border-top: none;
+}
+.bracket-br {
+  bottom: -2px;
+  right: -2px;
+  border-left: none;
+  border-top: none;
+}
+
+.diagonal-stripes {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(201, 169, 97, 0.15) 0,
+    rgba(201, 169, 97, 0.15) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+}
 
 @media (prefers-reduced-motion) {
   *,
   ::before,
   ::after {
     animation: none !important;
+    transition: none !important;
   }
 }
