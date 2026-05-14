@@ -335,7 +335,8 @@ function GameScreen({
         <div
           className="absolute -inset-px"
           style={{
-            background: "linear-gradient(140deg, vargold 0%, #5a4623 50%, vargold 100%)",
+            background:
+              "linear-gradient(140deg, vargold 0%, #5a4623 50%, vargold 100%)",
           }}
           aria-hidden
         />
@@ -379,7 +380,11 @@ function GameScreen({
         </div>
       </div>
 
-      <BrushPanel selected={brushSize} onSelect={onSelectBrush} disabled={disabled} />
+      <BrushPanel
+        selected={brushSize}
+        onSelect={onSelectBrush}
+        disabled={disabled}
+      />
 
       <div className="flex flex-wrap items-center justify-center gap-4 px-1">
         <ActionButton
@@ -448,7 +453,11 @@ function BrushPanel({ selected, onSelect, disabled }: BrushPanelProps) {
               />
             )}
             <div className="relative flex items-center justify-between gap-2">
-              <KeyCap label={opt.key} size="sm" tone={active ? "light" : "dark"} />
+              <KeyCap
+                label={opt.key}
+                size="sm"
+                tone={active ? "light" : "dark"}
+              />
               <BrushPreview size={opt.size} active={active} />
             </div>
             <div
@@ -488,8 +497,7 @@ function BrushPreview({
     <span
       aria-hidden
       className={
-        "inline-block rounded-full " +
-        (active ? "bg-hinomaru" : "bg-paper/70")
+        "inline-block rounded-full " + (active ? "bg-hinomaru" : "bg-paper/70")
       }
       style={{ width: `${w}px`, height: `${h}px` }}
     />
@@ -529,7 +537,11 @@ function ActionButton({
       }
       style={{ fontFamily: "var(--font-body)", fontWeight: 700 }}
     >
-      <KeyCap label={keyLabel} size="sm" tone={tone === "primary" ? "dark" : "dark"} />
+      <KeyCap
+        label={keyLabel}
+        size="sm"
+        tone={tone === "primary" ? "dark" : "dark"}
+      />
       <span>{children}</span>
     </motion.button>
   );
@@ -602,7 +614,7 @@ const verdictHeadline = (v: "fail" | "success" | "perfect"): string => {
     case "success":
       return "成功";
     case "fail":
-      return "失敗";
+      return "国旗損壊罪";
   }
 };
 
@@ -805,10 +817,15 @@ function ResultPanel({
   );
 }
 
-function VerdictStamp({ verdict }: { readonly verdict: "fail" | "success" | "perfect" }) {
+function VerdictStamp({
+  verdict,
+}: {
+  readonly verdict: "fail" | "success" | "perfect";
+}) {
   const reduced = useReducedMotion();
   const label = verdictHeadline(verdict);
-  const border = verdict === "perfect" ? "vargold-bright" : verdictColor(verdict);
+  const border =
+    verdict === "perfect" ? "vargold-bright" : verdictColor(verdict);
   return (
     <div className="relative h-24 flex items-center justify-center">
       <div
@@ -819,7 +836,9 @@ function VerdictStamp({ verdict }: { readonly verdict: "fail" | "success" | "per
       </div>
       <motion.div
         className="relative inline-flex items-center justify-center"
-        initial={reduced ? { opacity: 0 } : { scale: 2.2, rotate: -12, opacity: 0 }}
+        initial={
+          reduced ? { opacity: 0 } : { scale: 2.2, rotate: -12, opacity: 0 }
+        }
         animate={{ scale: 1, rotate: -8, opacity: 1 }}
         transition={{
           type: "spring",
@@ -921,7 +940,11 @@ function ScoreBar({ label, value, children }: ScoreBarProps) {
           className="absolute inset-y-0 left-0 bg-hinomaru"
           initial={reduced ? { width: `${widthPct}%` } : { width: 0 }}
           animate={{ width: `${widthPct}%` }}
-          transition={{ delay: reduced ? 0 : 0.7, duration: reduced ? 0 : 0.7, ease: "easeOut" }}
+          transition={{
+            delay: reduced ? 0 : 0.7,
+            duration: reduced ? 0 : 0.7,
+            ease: "easeOut",
+          }}
         />
       </div>
       {children && <div className="mt-1.5 space-y-0.5">{children}</div>}
